@@ -1,0 +1,13 @@
+node_modules/
+client/dist/
+server/coverage/
+.env
+.env.*
+!.env.example
+*.log
+*.tmp
+*.png
+!client/public/favicon.png
+/outputs/
+/work/
+.vercel/
