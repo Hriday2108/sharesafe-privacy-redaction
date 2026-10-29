@@ -19,7 +19,7 @@ export const redact = [upload, asyncHandler(async (req, res) => {
   if (!userExists) throw new Error('UNAUTHORIZED_USER');
   await Redaction.create({ userId: req.user.id, fileType: result.fileType, counts });
   const isPdf = result.fileType === 'pdf';
-  res.set({ 'Content-Type': isPdf ? 'application/pdf' : 'image/png', 'Content-Disposition': `attachment; filename="sharesafe-redacted.${isPdf ? 'pdf' : 'png'}"`, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'X-Redaction-Verified': 'true' });
+  res.set({ 'Content-Type': isPdf ? 'application/pdf' : 'image/png', 'Content-Disposition': `attachment; filename="sharesafe-redacted.${isPdf ? 'pdf' : 'png'}"`, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'X-Redaction-Verified': 'true', 'X-Redaction-Checks': (result.verification || []).join(',') });
   return res.send(result.buffer);
 })];
 export const history = asyncHandler(async (req, res) => {

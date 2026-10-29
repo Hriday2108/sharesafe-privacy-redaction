@@ -47,7 +47,7 @@ export async function redactPdf(buffer, regions) {
       pageInfo.push({ page, viewport, width, height, pointWidth: base.width, pointHeight: base.height });
     }
     validatePdfRegions(regions, input.numPages, pageInfo);
-    const output = await PDFDocument.create();
+    const output = await PDFDocument.create({ updateMetadata: false });
     output.setProducer('ShareSafe');
     output.setCreator('ShareSafe PDF redaction');
     for (let index = 0; index < pageInfo.length; index += 1) {
@@ -56,7 +56,7 @@ export async function redactPdf(buffer, regions) {
       const context = canvas.getContext('2d');
       context.fillStyle = '#ffffff';
       context.fillRect(0, 0, width, height);
-      try { await page.render({ canvasContext: context, viewport, canvas }).promise; } catch { throw new Error('INVALID_PDF'); }
+      try { await page.render({ canvasContext: context, viewport, canvas, annotationMode: pdfjsLib.AnnotationMode.ENABLE }).promise; } catch { throw new Error('INVALID_PDF'); }
       const overlays = regions.filter((region) => region.page === index + 1).map(({ x, y, width: w, height: h }) => ({
         input: { create: { width: Math.max(1, Math.ceil(w)), height: Math.max(1, Math.ceil(h)), channels: 4, background: '#071b18' } },
         left: Math.floor(x), top: Math.floor(y),
@@ -83,9 +83,18 @@ export async function redactPdf(buffer, regions) {
         const operators = await page.getOperatorList();
         const hasImage = operators.fnArray.some((fn) => fn === pdfjsLib.OPS.paintImageXObject || fn === pdfjsLib.OPS.paintJpegXObject || fn === pdfjsLib.OPS.paintInlineImageXObject);
         if (!hasImage) throw new Error('PDF_VERIFICATION_FAILED');
+        if ((await page.getAnnotations({ intent: 'display' })).length !== 0) throw new Error('PDF_VERIFICATION_FAILED');
         page.cleanup();
       }
+      const attachments = await verified.getAttachments();
+      const metadata = await verified.getMetadata();
+      const info = metadata.info || {};
+      const privateInfoFields = ['Title', 'Author', 'Subject', 'Keywords', 'CreationDate', 'ModDate'];
+      if ((attachments?.size || 0) !== 0 || privateInfoFields.some((key) => Boolean(info[key])) || metadata.metadata) throw new Error('PDF_VERIFICATION_FAILED');
     } finally { await verifiedTask.destroy(); }
-    return { buffer: bytes, fileType: 'pdf', pageCount: input.numPages };
+    return {
+      buffer: bytes, fileType: 'pdf', pageCount: input.numPages,
+      verification: ['page-count-verified', 'pages-rasterized', 'searchable-text-absent', 'annotations-absent', 'attachments-absent', 'source-metadata-not-carried'],
+    };
   } finally { await inputTask.destroy(); }
 }

@@ -54,7 +54,7 @@ npm test
 npm run build
 ```
 
-The server tests use Node's built-in test runner and exercise redaction pixels, region validation, API validation, auth gates, and CORS policy. Database-backed registration and history isolation require MongoDB; start MongoDB and the API for a full local workflow. Browser UI and Tesseract require the Vite app in a browser.
+The server and client tests use Node's built-in test runner and cover redaction pixels, image orientation, PDF flattening and verification, region validation, API validation, authentication gates, user-scoped history queries, CORS policy, risk scoring, editor coordinate mapping, and report masking. Tests use synthetic fixtures. Database-backed registration and full API history integration require MongoDB; start MongoDB and the API for that workflow. Browser UI and Tesseract require the Vite app in a browser.
 
 ## API
 
@@ -87,3 +87,46 @@ Deploy this repository as two Vercel projects, both connected to the same GitHub
 5. Deploy the frontend, then update the API project's `CLIENT_ORIGIN` to the final frontend origin and redeploy the API.
 
 Vercel stores environment variables outside Git. Never add `.env` files, Atlas credentials, or JWT secrets to the repository. The frontend defaults to same-origin API requests in production only when `VITE_API_URL` is unset; for the two-project setup above, set it to the API origin.
+
+
+## Architecture and feature notes
+
+```mermaid
+flowchart LR
+  Browser[React + Vite] -->|local OCR, metadata inspection, region review| ClientOnly[Browser memory]
+  Browser -->|JWT + original file + selected coordinates| API[Express API]
+  API -->|validate signature, bounds, dimensions| Processor[Sharp / PDF.js + pdf-lib]
+  Processor -->|flattened output + verification checks| Browser
+  API -->|counts, format, timestamp only| Mongo[(MongoDB)]
+```
+
+### Risk estimate and review editor
+
+The scan review includes a deterministic educational risk estimate. The score adds 2 for each selected email or phone region, 3 per identifier, and 1 per manual region. Scores 0–1 are Low, 2–5 Medium, and 6+ High. Incomplete OCR coverage raises the estimate to at least Medium. A scan with no detections is explicitly inconclusive; it is never described as safe. Recommendations identify categories that should be reviewed. This is not a formal security rating or compliance certification.
+
+The editor supports detection selection, manual boxes, moving/resizing, deletion, undo/redo, zoom, fit, and PDF page navigation. OCR detections are advisory and may miss content. The preview boxes are overlays; only the server-generated export has redaction pixels applied. Coordinates are sent as rendered page pixels with the page number, and the server independently renders the source PDF using the same capped coordinate scale.
+
+### Metadata inspection and verification report
+
+Metadata inspection is performed in the browser. It reports categories and whether values exist without displaying the values: image location/device/time/orientation and supported PDF document information, attachments, and annotations. It preserves the input. The export report identifies the server checks completed and metadata checks that were verified or could not be performed. Image exports are flattened PNGs with source metadata not carried over. PDF exports are rebuilt from rasterized pages, and the service checks page count, absence of searchable text/annotations/attachments, and source metadata not being carried over. The report does not prove that visible sensitive content was detected or hidden.
+
+After redaction, download the JSON verification report from the completion view. It contains timestamp, formats, selected-region counts, educational pre-redaction risk, completed/incomplete checks, warnings, and the output SHA-256. It contains no file name, OCR text, or field values. The hash confirms output integrity only; it does not prove the document is free of sensitive information. Human review remains required.
+
+### Supported formats and limits
+
+- PNG and JPEG images: at most 10 MB and 6,000 × 6,000 pixels. Image outputs are flattened PNG.
+- PDFs: at most 4 MB and 8 pages; each rendered page is capped at 1,800 px per side and 2 megapixels, with a 16-megapixel total cap. PDF output is a fresh image-only PDF; selectable source text is not retained.
+- At most 50 redaction regions per request.
+- PDF metadata coverage is limited to fields exposed by PDF.js and the checks listed in the report. This project does not claim full inspection of every possible malformed or exotic document structure. OCR and semantic review are not exhaustive.
+
+### Demonstration workflow
+
+1. Run `npm run dev` with MongoDB available and register a test account.
+2. Generate a synthetic image using `npm --prefix server run sample`, or create a synthetic PDF with fabricated names/contact details. Never test with actual identity documents.
+3. Upload the file. Review the local metadata categories and OCR results, then verify missed regions manually.
+4. Select detections or draw manual boxes. Inspect the risk estimate and warnings, then request redaction.
+5. Review the exported image/PDF and download the JSON report. Confirm the report's output hash and verification checks, then perform a human visual review before sharing.
+
+### Additional security notes
+
+Original uploads and OCR results are held in browser memory for the current work session and sent to the authenticated API only when redaction is requested. The API uses memory-backed upload handling and does not persist source files. Browser work is cleared at sign-out. History is scoped by authenticated user and limited to the 100 newest records; records contain format, timestamp, and category counts only. Metadata inspection does not transmit document content to an external AI service. The browser's metadata display masks values by design.

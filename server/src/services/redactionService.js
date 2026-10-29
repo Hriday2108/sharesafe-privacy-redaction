@@ -13,15 +13,21 @@ export function validateRegions(regions, width, height) {
 }
 export async function redactImage(buffer, regions) {
   let metadata;
-  try { metadata = await sharp(buffer, { limitInputPixels: 36_000_000, failOn: 'error' }).metadata(); } catch { throw new Error('INVALID_IMAGE'); }
+  let normalized;
+  try {
+    metadata = await sharp(buffer, { limitInputPixels: 36_000_000, failOn: 'error' }).metadata();
+    normalized = await sharp(buffer, { limitInputPixels: 36_000_000, failOn: 'error' }).rotate().toBuffer();
+  } catch { throw new Error('INVALID_IMAGE'); }
   if (!['png', 'jpeg'].includes(metadata.format) || !metadata.width || !metadata.height) throw new Error('INVALID_IMAGE');
-  if (metadata.width > 6000 || metadata.height > 6000 || metadata.width * metadata.height > 36_000_000) throw new Error('IMAGE_TOO_LARGE');
-  validateRegions(regions, metadata.width, metadata.height);
+  const normalizedMetadata = await sharp(normalized, { failOn: 'error' }).metadata();
+  if (normalizedMetadata.width > 6000 || normalizedMetadata.height > 6000 || normalizedMetadata.width * normalizedMetadata.height > 36_000_000) throw new Error('IMAGE_TOO_LARGE');
+  // OCR coordinates correspond to the visually oriented bitmap. Normalize EXIF orientation first.
+  validateRegions(regions, normalizedMetadata.width, normalizedMetadata.height);
   const overlays = regions.map(({ x, y, width, height }) => ({ input: { create: { width: Math.max(1, Math.ceil(width)), height: Math.max(1, Math.ceil(height)), channels: 4, background: '#071b18' } }, left: Math.floor(x), top: Math.floor(y) }));
-  const output = await sharp(buffer).rotate().composite(overlays).png({ compressionLevel: 9 }).toBuffer();
+  const output = await sharp(normalized).composite(overlays).flatten({ background: '#ffffff' }).removeAlpha().toColourspace('srgb').png({ compressionLevel: 9 }).toBuffer();
   const verified = await sharp(output, { failOn: 'error' }).metadata();
-  if (verified.format !== 'png' || verified.width !== metadata.width || verified.height !== metadata.height) throw new Error('INVALID_IMAGE');
-  return { buffer: output, width: verified.width, height: verified.height, fileType: metadata.format };
+  if (verified.format !== 'png' || verified.width !== normalizedMetadata.width || verified.height !== normalizedMetadata.height || verified.hasAlpha || verified.exif || verified.iptc || verified.xmp || verified.icc) throw new Error('IMAGE_VERIFICATION_FAILED');
+  return { buffer: output, width: verified.width, height: verified.height, fileType: metadata.format, verification: ['output-is-png', 'dimensions-verified', 'flattened-pixels', 'source-metadata-not-carried'] };
 }
 export async function redactUploadedFile(buffer, regions) {
   if (buffer.subarray(0, 5).toString('ascii') === '%PDF-') return redactPdf(buffer, regions);

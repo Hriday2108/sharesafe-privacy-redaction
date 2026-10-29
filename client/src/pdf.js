@@ -22,7 +22,7 @@ export async function renderPdfPages(file) {
       const context = canvas.getContext('2d', { alpha: false });
       context.fillStyle = '#fff';
       context.fillRect(0, 0, canvas.width, canvas.height);
-      await page.render({ canvasContext: context, viewport }).promise;
+      await page.render({ canvasContext: context, viewport, annotationMode: pdfjsLib.AnnotationMode.ENABLE }).promise;
       const blob = await new Promise((resolve, reject) => canvas.toBlob((result) => result ? resolve(result) : reject(new Error('PDF page could not be rendered.')), 'image/png'));
       pages.push({ page: number, width: canvas.width, height: canvas.height, blob, preview: URL.createObjectURL(blob) });
       canvas.width = 0;
@@ -33,5 +33,20 @@ export async function renderPdfPages(file) {
   } catch (error) {
     pages.forEach((page) => URL.revokeObjectURL(page.preview));
     throw error;
+  } finally { await task.destroy(); }
+}
+
+export async function readPdfPrivacyMetadata(file) {
+  const task = pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false });
+  try {
+    const document = await task.promise;
+    const [{ info = {} } = {}, attachments] = await Promise.all([document.getMetadata(), document.getAttachments()]);
+    let annotations = 0;
+    for (let index = 1; index <= document.numPages; index += 1) {
+      const page = await document.getPage(index);
+      annotations += (await page.getAnnotations({ intent: 'display' })).length;
+      page.cleanup();
+    }
+    return { info, attachments: attachments?.size || 0, annotations, complete: true };
   } finally { await task.destroy(); }
 }

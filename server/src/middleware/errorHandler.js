@@ -7,6 +7,7 @@ export function errorHandler(err, req, res, next) {
   if (err?.message === 'PDF_TOO_LARGE') return res.status(413).json({ error: req.file?.size > 4 * 1024 * 1024 ? 'PDFs must be 4 MB or smaller.' : 'PDF pages exceed the supported size limits.' });
   if (err?.message === 'PDF_TOO_MANY_PAGES') return res.status(400).json({ error: 'PDFs can contain up to 8 pages.' });
   if (err?.message === 'PDF_VERIFICATION_FAILED') return res.status(422).json({ error: 'The redacted PDF could not be verified. Please try again.' });
+  if (err?.message === 'IMAGE_VERIFICATION_FAILED') return res.status(422).json({ error: 'The redacted image could not be verified. Please try again.' });
   if (err?.message === 'IMAGE_TOO_LARGE') return res.status(400).json({ error: 'Image dimensions must be no larger than 6000 × 6000 pixels.' });
   if (err?.message === 'INVALID_REGIONS') return res.status(400).json({ error: 'One or more redaction regions are invalid.' });
   if (err?.message === 'NO_REGIONS') return res.status(400).json({ error: 'Select at least one region to redact.' });

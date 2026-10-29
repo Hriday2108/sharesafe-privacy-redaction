@@ -12,7 +12,7 @@ const app = express();
 const origins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173').split(',').map((value) => value.trim());
 app.disable('x-powered-by');
 app.use(helmet());
-app.use(cors({ origin(origin, callback) { if (!origin || origins.includes(origin)) return callback(null, true); return callback(new Error('CORS_ORIGIN')); }, methods: ['GET', 'POST'], allowedHeaders: ['Content-Type', 'Authorization'], exposedHeaders: ['X-Redaction-Verified'] }));
+app.use(cors({ origin(origin, callback) { if (!origin || origins.includes(origin)) return callback(null, true); return callback(new Error('CORS_ORIGIN')); }, methods: ['GET', 'POST'], allowedHeaders: ['Content-Type', 'Authorization'], exposedHeaders: ['X-Redaction-Verified', 'X-Redaction-Checks'] }));
 app.use(express.json({ limit: '16kb' }));
 app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: 'draft-7', legacyHeaders: false }), authRoutes);
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));

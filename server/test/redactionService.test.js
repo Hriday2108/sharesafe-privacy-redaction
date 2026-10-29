@@ -25,3 +25,19 @@ test('rejects invalid images and unsupported dimensions', async () => {
   const oversized = await sharp({ create: { width: 6001, height: 1, channels: 3, background: '#fff' } }).png().toBuffer();
   await assert.rejects(redactImage(oversized, [{ x: 0, y: 0, width: 1, height: 1, category: 'manual' }]), /IMAGE_TOO_LARGE/);
 });
+
+test('normalizes EXIF orientation before applying browser-coordinate regions', async () => {
+  const oriented = await sharp({ create: { width: 40, height: 30, channels: 3, background: '#f5f5f5' } })
+    .jpeg().withMetadata({ orientation: 6 }).toBuffer();
+  const result = await redactImage(oriented, [{ x: 5, y: 5, width: 10, height: 10, category: 'manual' }]);
+  const metadata = await sharp(result.buffer).metadata();
+  const { data, info } = await sharp(result.buffer).raw().toBuffer({ resolveWithObject: true });
+  const covered = (8 * info.width + 8) * info.channels;
+  const uncovered = (30 * info.width + 20) * info.channels;
+  assert.equal(metadata.width, 30);
+  assert.equal(metadata.height, 40);
+  assert.equal(metadata.hasAlpha, false);
+  assert.equal(metadata.exif, undefined);
+  assert.ok(data[covered] < 20 && data[covered + 1] < 40 && data[covered + 2] < 40);
+  assert.ok(data[uncovered] > 200, 'pixels outside the selected box remain visible');
+});
