@@ -1,10 +1,11 @@
 import sharp from 'sharp';
+import { redactPdf } from './pdfRedactionService.js';
 const MAX_REGIONS = 50;
 export function validateRegions(regions, width, height) {
   if (!Array.isArray(regions) || regions.length === 0 || regions.length > MAX_REGIONS) throw new Error(regions?.length === 0 ? 'NO_REGIONS' : 'INVALID_REGIONS');
   const allowed = new Set(['email', 'phone', 'identifier', 'manual']);
   for (const region of regions) {
-    if (!region || !Number.isFinite(region.x) || !Number.isFinite(region.y) || !Number.isFinite(region.width) || !Number.isFinite(region.height) || !allowed.has(region.category)) throw new Error('INVALID_REGIONS');
+    if (!region || ![region.x, region.y, region.width, region.height].every(Number.isInteger) || !allowed.has(region.category)) throw new Error('INVALID_REGIONS');
     const { x, y, width: w, height: h } = region;
     if (w < 1 || h < 1 || x < 0 || y < 0 || x + w > width || y + h > height) throw new Error('INVALID_REGIONS');
   }
@@ -21,4 +22,9 @@ export async function redactImage(buffer, regions) {
   const verified = await sharp(output, { failOn: 'error' }).metadata();
   if (verified.format !== 'png' || verified.width !== metadata.width || verified.height !== metadata.height) throw new Error('INVALID_IMAGE');
   return { buffer: output, width: verified.width, height: verified.height, fileType: metadata.format };
+}
+export async function redactUploadedFile(buffer, regions) {
+  if (buffer.subarray(0, 5).toString('ascii') === '%PDF-') return redactPdf(buffer, regions);
+  if (regions.some((region) => region?.page !== undefined && region.page !== 1)) throw new Error('INVALID_REGIONS');
+  return redactImage(buffer, regions);
 }

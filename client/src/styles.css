@@ -14,3 +14,35 @@
 @media(max-width:560px){.top-actions .icon-button{display:none}.breadcrumbs{font-size:10px}.main-content{padding:22px 14px 30px}.footer{padding:0 14px;font-size:8px}.footer span:first-child{max-width:55%}.welcome-row,.page-title-row{align-items:flex-start;flex-direction:column;gap:14px;margin-bottom:19px}.welcome-row h1,.page-title-row h1{font-size:23px}.welcome-row>.button-primary,.page-title-row>.button-primary{align-self:flex-start}.step-indicator{align-self:flex-start}.hero-panel{min-height:222px;padding:22px 18px}.hero-copy{max-width:92%;z-index:3}.hero-copy h2{font-size:22px}.hero-copy>p{max-width:240px;line-height:1.55}.hero-art{right:-177px;opacity:.3;transform:scale(.73)}.hero-meta{font-size:8px}.stat-grid{gap:7px}.stat-card{padding:11px 9px}.stat-icon{width:28px;height:28px}.stat-icon svg{width:16px}.stat-value{font-size:21px;margin-top:11px}.stat-title{font-size:9px}.stat-hint{font-size:8px}.section-head{margin-top:22px}.activity-row{padding:10px;gap:7px}.activity-icon{width:28px;height:28px}.activity-main strong{font-size:9px}.activity-main span{font-size:8px}.activity-row .format-tag{display:none}.count-pill{font-size:8px;padding:4px 6px}.upload-panel{padding:14px}.dropzone{min-height:220px;padding:12px}.dropzone>strong{text-align:center;font-size:11px}.privacy-note{text-align:left;line-height:1.45}.upload-foot{align-items:flex-start;gap:10px;flex-direction:column}.upload-foot>.button-primary{width:100%}.scan-aside{grid-template-columns:1fr}.support-note{border-left:0;border-top:1px solid #eaf0ec}.format-note{align-items:flex-start}.format-note small{line-height:1.45}.image-stage{min-height:230px;max-height:390px}.image-stage>img{max-height:390px}.review-image-panel{padding:10px}.review-image-panel .panel-heading{gap:7px}.panel-heading p{max-width:205px;line-height:1.4}.manual-toggle{font-size:0;padding:8px}.manual-toggle svg{width:15px;height:15px}.image-legend{gap:9px}.image-dimensions{margin-left:0}.review-summary{padding:13px}.history-report{align-items:flex-start;padding:11px}.report-badge{font-size:0}.report-badge svg{width:15px}.history-row{padding:10px;gap:7px;flex-wrap:wrap}.history-main{min-width:calc(100% - 60px)}.history-categories{margin-left:37px}.verified-history{margin-left:auto}.history-row>.format-tag{margin-left:37px}.history-report p{font-size:8px}.history-table-head{padding:12px}.success-card{padding:22px 14px}.success-card h2{font-size:19px}.success-preview{height:185px}.final-preview{height:240px}.final-image-head{padding:12px}.final-action-card{padding:16px}.toast{left:12px;right:12px;bottom:12px;font-size:11px}}
 
 .image-canvas{position:relative;width:100%;max-height:550px;overflow:hidden;touch-action:none;user-select:none}.image-canvas>img{display:block;width:100%;height:100%;object-fit:fill;pointer-events:none}.drawing-mode .detection-box{pointer-events:none}.detection-box.manual{pointer-events:none}.remove-manual{pointer-events:auto}
+
+/* Slightly larger type for key UI copy; preserve compact decorative labels and layout. */
+.app-shell .nav-item { font-size: 13px; }
+.app-shell .workspace-label, .app-shell .eyebrow { font-size: 11px; }
+.app-shell .breadcrumbs { font-size: 12px; }
+.app-shell .secure-badge { font-size: 11px; }
+.app-shell .footer { font-size: 11px; }
+.app-shell .privacy-card strong, .app-shell .user-info strong { font-size: 12px; }
+.app-shell .privacy-card p, .app-shell .user-info span { font-size: 11px; }
+.app-shell .stat-title { font-size: 12px; }
+.app-shell .stat-hint, .app-shell .activity-main span, .app-shell .hero-meta { font-size: 11px; }
+.app-shell .activity-main strong { font-size: 12px; }
+.app-shell .history-report strong, .app-shell .history-main strong { font-size: 12px; }
+.app-shell .history-report p, .app-shell .history-main span { font-size: 11px; }
+.app-shell .history-categories span, .app-shell .verified-history, .app-shell .count-pill { font-size: 10px; }
+.app-shell .privacy-note, .app-shell .support-note, .app-shell .permanent-note, .app-shell .final-disclaimer { font-size: 11px; }
+.auth-screen .auth-form label { font-size: 12px; }
+.auth-screen .input-wrap input { font-size: 14px; }
+.auth-screen .auth-switch, .auth-screen .auth-privacy, .auth-screen .form-error, .auth-screen .inline-error { font-size: 12px; }
+@media (max-width: 800px) {
+  .app-shell .secure-badge { font-size: 0; }
+  .app-shell .footer { font-size: 10px; }
+}
+@media (max-width: 560px) {
+  .app-shell .footer { font-size: 10px; }
+  .app-shell .history-report p, .app-shell .history-main span { font-size: 10px; }
+  .app-shell .history-categories span, .app-shell .verified-history, .app-shell .count-pill { font-size: 9px; }
+}
+
+/* PDF document upload, page-by-page review, and flattened output previews. */
+.selected-pdf-preview{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;width:100%;height:100%;padding:22px 18px 70px;color:#168064;text-align:center}.selected-pdf-preview strong{color:#345255;font-size:14px}.selected-pdf-preview span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#5c726a;font-size:12px}.selected-pdf-preview small{color:#8b9a92;font-size:11px}.review-pages{display:grid;gap:14px}.review-page{min-width:0;padding:11px;border:1px solid #e7efea;border-radius:8px;background:#fbfdfb}.review-page-heading{margin-bottom:8px;color:#55756a;font-size:12px;font-weight:700}.review-page .image-stage{min-height:0;max-height:550px;padding:8px}.review-page .image-canvas{max-height:none}.page-dimensions{text-align:right;margin-top:7px;color:#94a29c;font-size:10px}.final-preview-pages{height:auto;max-height:550px;overflow:auto;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));align-items:center;gap:12px;padding:18px}.final-preview-pages img{width:100%;height:auto;max-height:420px;object-fit:contain;border:1px solid #e6ede9;background:white}.success-pdf-preview{overflow:hidden}.pdf-output-link{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;height:100%;padding:25px;color:#168064}.pdf-output-link strong{color:#345255;font-size:14px}.pdf-output-link a{color:#087c67;font-size:13px;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+@media(max-width:560px){.review-page{padding:8px}.review-page .image-stage{padding:4px}.final-preview-pages{grid-template-columns:1fr;padding:12px}.success-pdf-preview iframe{height:280px}}

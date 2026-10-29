@@ -1,20 +1,20 @@
 # ShareSafe
 
-**ShareSafe: A Privacy-Preserving Personal Information Detection and Redaction System** is a student project for finding likely personal details in images and irreversibly covering user-selected regions.
+**ShareSafe: A Privacy-Preserving Personal Information Detection and Redaction System** is a student project for finding likely personal details in images and PDFs and irreversibly covering user-selected regions.
 
 ## What it does
 
 - Registers users, hashes passwords with bcrypt, and protects private APIs with JWTs.
 - Runs Tesseract OCR in the browser. OCR text is not sent to the server or saved.
 - Detects likely email addresses, phone numbers, and configured `SSN`, `ID`, and `ACCOUNT` labels. Detection is a convenience, not a guarantee; manually review the image and add boxes for anything OCR misses.
-- Accepts PNG and JPEG uploads only. PDF is deliberately out of scope until genuine irreversible PDF redaction and verification are implemented.
-- Validates image signatures through Sharp, limits uploads to 10 MB, dimensions to 6000 × 6000 and 36 million pixels, and redaction regions to 50.
-- Composites opaque marks into a new PNG, removes the original pixel content in covered regions, flattens the output, and verifies that the returned file decodes as a PNG with matching dimensions.
+- Accepts PNG, JPEG, and PDF files. PDFs are rendered locally for OCR and review; selected coordinates are applied after the server independently renders the original PDF.
+- Validates image signatures through Sharp, limits images to 10 MB and 6,000 × 6,000 pixels, limits PDFs to 4 MB and 8 pages, and caps selections at 50 regions.
+- Rasterizes PDF pages in memory, covers selected regions, and rebuilds a flattened, image-only PDF. The server verifies the page count, image content, and absence of searchable text before returning it. Image uploads are flattened to PNG as before.
 - Stores only the user ID, timestamp, original format, and category counts for history. It never stores uploaded files, OCR text, sensitive values, or plaintext passwords.
 
 ## Requirements
 
-- Node.js 20 or later
+- Node.js 22.13 or later (PDF.js 6 runtime requirement)
 - MongoDB 6 or later (local install or a MongoDB Atlas connection string)
 
 ## Setup
@@ -63,14 +63,14 @@ The server tests use Node's built-in test runner and exercise redaction pixels, 
 | `POST` | `/api/auth/register` | Public, rate limited | Create account and return JWT |
 | `POST` | `/api/auth/login` | Public, rate limited | Verify credentials and return JWT |
 | `GET` | `/api/health` | Public | API liveness |
-| `POST` | `/api/redact` | Bearer JWT | Multipart `image` plus JSON `regions`; returns a PNG attachment |
+| `POST` | `/api/redact` | Bearer JWT | Multipart `image` plus JSON `regions`; returns a flattened PNG or PDF |
 | `GET` | `/api/history` | Bearer JWT | Return up to 100 metadata-only sessions for the signed-in user |
 
-Each region is `{ "category": "email|phone|identifier|manual", "x": 0, "y": 0, "width": 100, "height": 30 }`, expressed in the uploaded image's unrotated pixel coordinate system. The service checks every region against Sharp's detected dimensions. The image must be reviewed after download before sharing; the output verification checks its encoding and dimensions, not whether a human selected every sensitive item.
+Each region is `{ "category": "email|phone|identifier|manual", "page": 1, "x": 0, "y": 0, "width": 100, "height": 30 }`, expressed in rendered page pixels (`page` is 1 for images). PDF uploads are limited to 4 MB and 8 pages; each rendered page is capped at 1,800 px and 2 million pixels. Images remain limited to PNG/JPEG, 10 MB, and 6,000 × 6,000 pixels. The service validates actual file signatures and every region. PDF output is image-only and checked for an empty text layer and matching page count. Review each output after download before sharing; OCR can miss sensitive content.
 
 ## Privacy notes
 
-The scan occurs locally. To redact, the selected source image is sent over the authenticated API in memory, processed, and not written to disk. Only history metadata is persisted. Production deployment should use HTTPS, a strong unique secret, a narrowly configured `CLIENT_ORIGIN`, a protected MongoDB connection, secure operational logging, and an explicit data-retention policy. This educational project is not a security certification or a substitute for careful human review.
+The scan and PDF page rendering occur locally in the browser. To redact, the original file is sent over the authenticated API in memory, processed, and not written to disk. Only history metadata is persisted. Production deployment should use HTTPS, a strong unique secret, a narrowly configured `CLIENT_ORIGIN`, a protected MongoDB connection, secure operational logging, and an explicit data-retention policy. This educational project is not a security certification or a substitute for careful human review.
 
 ## Deploy to Vercel
 

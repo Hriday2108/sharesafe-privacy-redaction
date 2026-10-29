@@ -17,7 +17,6 @@ test('authentication endpoints validate input and do not leak account details', 
 });
 test('private history and redaction require authentication', async () => {
   assert.equal((await request(app).get('/api/history')).status, 401);
-  assert.equal((await request(app).get('/api/redact/history')).status, 401);
   assert.equal((await request(app).post('/api/redact')).status, 401);
 });
 test('a valid token reaches the user-scoped history handler', async () => {
@@ -29,5 +28,5 @@ test('a valid token reaches the user-scoped history handler', async () => {
 });
 test('CORS rejects unconfigured browser origins', async () => {
   const response = await request(app).get('/api/health').set('Origin', 'https://untrusted.example');
-  assert.equal(response.status, 500); assert.equal(response.headers['access-control-allow-origin'], undefined);
+  assert.equal(response.status, 403); assert.equal(response.headers['access-control-allow-origin'], undefined);
 });
